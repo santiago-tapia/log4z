@@ -1,26 +1,26 @@
 ﻿/*
  * Log4z License
  * -----------
- * 
+ *
  * Log4z is licensed under the terms of the MIT license reproduced below.
  * This means that Log4z is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
- * 
- * 
+ *
+ *
  * ===============================================================================
- * 
+ *
  * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -28,9 +28,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * ===============================================================================
- * 
+ *
  * (end of COPYRIGHT)
  */
 
@@ -52,69 +52,69 @@
  */
 
 
-/* 
+/*
  * UPDATES LOG
- * 
+ *
  * VERSION 0.1.0 <DATE: 2010.10.4>
- * 	create the first project.  
- * 	It support put log to screen and files, 
+ * 	create the first project.
+ * 	It support put log to screen and files,
  * 	support log level, support one day one log file.
  * 	support multi-thread, cross-platform.
- * 
+ *
  * VERSION .... <DATE: ...>
  * 	...
- * 
+ *
  * VERSION 0.9.0 <DATE: 2012.12.24>
  * 	support config files.
  * 	support color text in screen.
  * 	support multiple output to different files.
- * 
+ *
  * VERSION 1.0.0 <DATE: 2012.12.29>
  * 	support comments in the config file.
  * 	add a advanced demo in the ./project
  * 	fix some details.
- * 
+ *
  * VERSION 1.0.1 <DATE: 2013.01.01>
  * 	change and add some Comments in the log4z
  * 	simplify the 'fast_test' demo projects.
- * 
+ *
  * VERSION 1.1.0 <DATE: 2013.01.24>
  * 	the method Start will wait for the logger thread started.
- * 	config and add method change. 
+ * 	config and add method change.
  * 	namespace change.
- * 
+ *
  * VERSION 1.1.1 <DATE: 2013.02.23>
  * 	add status info method.
- * 	optimize. 
+ * 	optimize.
  *
  * VERSION 1.2.0 <DATE: 2013.04.05>
  * 	add stress test demo
- *  rewrite Stream module,better performance. 
- * 
+ *  rewrite Stream module,better performance.
+ *
  * VERSION 1.2.1 <DATE: 2013.04.13>
  * 	fixed type name 'long' stream format on 64/32 operation system.
  *  logger will not loss any log on process normal exit.
  *
  * VERSION 2.0.0 <DATE: 2013.04.25>
- * 	new interface: 
+ * 	new interface:
  *      merge some Main interface and Dynamic interface
  *      add Change Logger Attribute method by thread-safe
  * 	new config design.
  * 	log file name append process id.
  *
  * VERSION 2.1 <DATE: 2013.05.22>
- * 	support binary text output 
+ * 	support binary text output
  *  rewrite write file module, support vs2005 open Chinese characters path
  *
  * VERSION 2.2 <DATE: 2013.07.08>
  *	optimized binary stream output view
  * 	support wchar * string.
- *  
+ *
  * VERSION 2.3 <DATE: 2013.08.29>
  *  adjust output file named.
  *  support different month different directory.
  *  adjust some detail.
- * 
+ *
  * VERSION 2.4 <DATE: 2013.10.07>
  *  support rolling log file.
  *  support hot update configure
@@ -131,15 +131,15 @@
  *  fix WCHAR String cannot output
  *  optimize std::string, binary log input, and support std::wstring.
  *  clean code, better readability
- *  
+ *
  * VERSION 2.6 <DATE: 2014.08.19>
- *  add PrePushLog 
+ *  add PrePushLog
  *  better performance when log is filter out.
  *  interface replace std::string because it's in shared library is unsafe.
  *  add log level 'trace'
- * 
+ *
  * VERSION 2.6.1 <DATE: 2014.08.22>
- *  fix bug from defined _MSC_VER 
+ *  fix bug from defined _MSC_VER
  *
  * VERSION 2.7 <DATE: 2014.09.21>
  *  compatible mac machine,  now  log4z can working in linux/windows/mac.
@@ -150,13 +150,13 @@
  *  ignore utf-8 file BOM when load configure file
  *  use macro WIN32_LEAN_AND_MEAN replace head file winsock2.h
  *  new naming notations
- * 
+ *
  * VERSION 3.0 <DATE: 2014.12.19>
  *  new naming notations
  *  support for reading config from a string.
  *  remove all TLS code, used dispatch_semaphore in apple OS.
  *  support system: windows, linux, mac, iOS
- *  
+ *
  */
 
 
@@ -236,7 +236,7 @@ const bool LOG4Z_DEFAULT_OUTFILE = true;
 const bool LOG4Z_DEFAULT_MONTHDIR = false;
 //! default logger output file limit size, unit M byte.
 const int LOG4Z_DEFAULT_LIMITSIZE = 100;
-//! default logger show suffix (file name and line number) 
+//! default logger show suffix (file name and line number)
 const bool LOG4Z_DEFAULT_SHOWSUFFIX = true;
 
 ///////////////////////////////////////////////////////////////////////////
@@ -249,7 +249,7 @@ const bool LOG4Z_DEFAULT_SHOWSUFFIX = true;
 
 #ifndef _ZSUMMER_BEGIN
 #define _ZSUMMER_BEGIN namespace zsummer {
-#endif  
+#endif
 #ifndef _ZSUMMER_LOG4Z_BEGIN
 #define _ZSUMMER_LOG4Z_BEGIN namespace log4z {
 #endif
@@ -267,7 +267,7 @@ public:
 	virtual ~ILog4zManager(){};
 
 	//! Log4z Singleton
-	
+
 	static ILog4zManager * getInstance();
 	inline static ILog4zManager & getRef(){return *getInstance();}
 	inline static ILog4zManager * getPtr(){return getInstance();}
@@ -291,7 +291,7 @@ public:
 	//! Find logger. thread safe.
 	virtual LoggerId findLogger(const char* key) =0;
 
-	//pre-check the log filter. if filter out return false. 
+	//pre-check the log filter. if filter out return false.
 	virtual bool prePushLog(LoggerId id, int level) = 0;
 	//! Push log, thread safe.
 	virtual bool pushLog(LoggerId id, int level, const char * log, const char * file = NULL, int line = 0) = 0;
@@ -306,7 +306,7 @@ public:
 	virtual bool setLoggerOutFile(LoggerId id, bool enable) = 0;
 	virtual bool setLoggerLimitsize(LoggerId id, unsigned int limitsize) = 0;
 	virtual bool setLoggerMonthdir(LoggerId id, bool enable) = 0;
-	
+	virtual bool setLoggerPrefix(LoggerId id, bool enable) = 0;
 
 	//! Update logger's attribute from config file, thread safe.
 	virtual bool setAutoUpdate(int interval/*per second, 0 is disable auto update*/) = 0;
@@ -325,7 +325,7 @@ class Log4zBinary;
 
 #ifndef _ZSUMMER_END
 #define _ZSUMMER_END }
-#endif  
+#endif
 #ifndef _ZSUMMER_LOG4Z_END
 #define _ZSUMMER_LOG4Z_END }
 #endif
@@ -550,7 +550,7 @@ inline Log4zStream& Log4zStream::writeData(const char * ft, T t)
 
 inline Log4zStream & Log4zStream::writeLongLong(long long t)
 {
-#ifdef WIN32  
+#ifdef WIN32
 	writeData("%I64d", t);
 #else
 	writeData("%lld", t);
@@ -560,7 +560,7 @@ inline Log4zStream & Log4zStream::writeLongLong(long long t)
 
 inline Log4zStream & Log4zStream::writeULongLong(unsigned long long t)
 {
-#ifdef WIN32  
+#ifdef WIN32
 	writeData("%I64u", t);
 #else
 	writeData("%llu", t);

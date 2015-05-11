@@ -378,6 +378,7 @@ public:
 	virtual bool setLoggerOutFile(LoggerId id, bool enable);
 	virtual bool setLoggerLimitsize(LoggerId id, unsigned int limitsize);
 	virtual bool setLoggerMonthdir(LoggerId id, bool enable);
+	virtual bool setLoggerPrefix(LoggerId id, bool enable);
 
 	virtual bool setAutoUpdate(int interval);
 	virtual bool updateConfig();
@@ -1226,6 +1227,7 @@ bool LogerManager::configFromStringImpl(std::string content, bool isUpdate)
 		setLoggerOutFile(id, iter->second._outfile);
 		setLoggerLimitsize(id, iter->second._limitsize);
 		setLoggerMonthdir(id, iter->second._monthdir);
+		setLoggerPrefix(id, iter->second._show_prefix);
 	}
 	return true;
 }
@@ -1525,6 +1527,12 @@ bool LogerManager::setLoggerMonthdir(LoggerId id, bool enable)
 {
 	if (id <0 || id > _lastId) return false;
 	_loggers[id]._monthdir = enable;
+	return true;
+}
+bool LogerManager::setLoggerPrefix(LoggerId id, bool enable)
+{
+	if (id <0 || id > _lastId) return false;
+	_loggers[id]._show_prefix = enable;
 	return true;
 }
 bool LogerManager::setLoggerLimitsize(LoggerId id, unsigned int limitsize)
