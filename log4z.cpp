@@ -1365,15 +1365,14 @@ int LogerManager::print_str(char* &buffer, size_t &buffer_size, const char* form
 
 void LogerManager::formatLog(LogData * pLog, const char * log, const char * file, int line)
 {
-    const auto &the_logger = _loggers[pLog->_id];
     char *buffer = pLog->_content;
     pLog->_contentLen = 0;
     size_t remain_buffer = LOG4Z_LOG_BUF_SIZE;
 
-    if ( the_logger._show_prefix )
+    if ( _loggers[pLog->_id]._show_prefix )
     {
         tm tt = timeToTm(pLog->_time);
-        int ret = print_str(buffer, remain_buffer, "%d-%02d-%02d %02d:%02d:%02d.%03d %s ",
+        int ret = print_str(buffer, remain_buffer, "%d/%02d/%02d %02d:%02d:%02d.%03d %s ",
             tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
             LOG_STRING[pLog->_level]);
 
@@ -1395,15 +1394,12 @@ void LogerManager::formatLog(LogData * pLog, const char * log, const char * file
             pNameBegin--;
         } while (true);
 
-        int ret = print_str(buffer, remain_buffer, " %s:%d", file, line);
+        int ret = print_str(buffer, remain_buffer, " %s:%d", pNameBegin, line);
         pLog->_contentLen += ret;
     }
 
-    if (pLog->_contentLen >= 2)
-    {
-        pLog->_content[pLog->_contentLen - 2] = '\r';
-        pLog->_content[pLog->_contentLen - 1] = '\n';
-    }
+    ret = print_str(buffer, remain_buffer, "\r\n");
+    pLog->_contentLen += ret;
 }
 
 bool LogerManager::pushLog(LoggerId id, int level, const char * log, const char * file, int line)
