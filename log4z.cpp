@@ -1,26 +1,26 @@
 ﻿/*
  * Log4z License
  * -----------
- * 
+ *
  * Log4z is licensed under the terms of the MIT license reproduced below.
  * This means that Log4z is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
- * 
- * 
+ *
+ *
  * ===============================================================================
- * 
+ *
  * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -28,15 +28,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * ===============================================================================
- * 
+ *
  * (end of COPYRIGHT)
  */
 
 #include "log4z.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <time.h>
 #include <string.h>
@@ -288,7 +289,7 @@ struct LogData
 	LoggerId _id;		//dest logger id
 	int	_level;	//log level
 	time_t _time;		//create time
-	unsigned int _precise; //create time 
+	unsigned int _precise; //create time
 	int _contentLen;
 	char _content[LOG4Z_LOG_BUF_SIZE]; //content
 };
@@ -296,19 +297,20 @@ struct LogData
 //////////////////////////////////////////////////////////////////////////
 //! LoggerInfo
 //////////////////////////////////////////////////////////////////////////
-struct LoggerInfo 
+struct LoggerInfo
 {
 	//! attribute
 	std::string _key;   //logger key
 	std::string _name;	// one logger one name.
 	std::string _path;	//path for log file.
 	int  _level;		//filter level
-	bool _display;		//display to screen 
+	bool _display;		//display to screen
 	bool _outfile;		//output to file
-	bool _monthdir;		//create directory per month 
+	bool _monthdir;		//create directory per month
 	unsigned int _limitsize; //limit file's size, unit Million byte.
-	bool _enable;		//logger is enable 
+	bool _enable;		//logger is enable
 	bool _fileLine;		//enable/disable the log's suffix.(file name:line number)
+	bool _show_prefix;    //enable/disable the log's prefix.(time level)
 
 	//! runtime info
 	time_t _curFileCreateTime;	//file create time
@@ -316,20 +318,21 @@ struct LoggerInfo
 	unsigned int _curWriteLen;  //current file length
 	Log4zFileHandler	_handle;		//file handle.
 
-	//! hot update name or path for the logger 
+	//! hot update name or path for the logger
 	bool _hotChange;
-	
+
 	LoggerInfo()
 	{
-		_enable = false; 
-		_path = LOG4Z_DEFAULT_PATH; 
-		_level = LOG4Z_DEFAULT_LEVEL; 
-		_display = LOG4Z_DEFAULT_DISPLAY; 
+		_enable = false;
+		_path = LOG4Z_DEFAULT_PATH;
+		_level = LOG4Z_DEFAULT_LEVEL;
+		_display = LOG4Z_DEFAULT_DISPLAY;
 		_outfile = LOG4Z_DEFAULT_OUTFILE;
 
-		_monthdir = LOG4Z_DEFAULT_MONTHDIR; 
+		_monthdir = LOG4Z_DEFAULT_MONTHDIR;
 		_limitsize = LOG4Z_DEFAULT_LIMITSIZE;
 		_fileLine = LOG4Z_DEFAULT_SHOWSUFFIX;
+		_show_prefix = true;
 
 		_curFileCreateTime = 0;
 		_curFileIndex = 0;
@@ -348,11 +351,14 @@ class LogerManager : public ThreadHelper, public ILog4zManager
 public:
 	LogerManager();
 	virtual ~LogerManager();
-	
+
 	bool configFromStringImpl(std::string content, bool isUpdate);
 	//! 读取配置文件并覆写
 	virtual bool config(const char* configPath);
 	virtual bool configFromString(const char* configContent);
+
+    int print_str(char* &buffer, size_t &buffer_size, const char* format, ... );
+    void formatLog(LogData * pLog, const char * log, const char * file, int line);
 
 	//! 覆写式创建
 	virtual LoggerId createLogger(const char* key);
@@ -405,9 +411,9 @@ private:
 	std::string _configFile;
 
 	//! logger id manager, [logger name]:[logger id].
-	std::map<std::string, LoggerId> _ids; 
+	std::map<std::string, LoggerId> _ids;
 	// the last used id of _loggers
-	LoggerId	_lastId; 
+	LoggerId	_lastId;
 	LoggerInfo _loggers[LOG4Z_LOGGER_MAX];
 
 	//! log queue
@@ -528,7 +534,7 @@ static void trimLogConfig(std::string &str, std::string extIgnore)
 	int posEnd = 0;
 
 	//trim utf8 file bom
-	if (str.length() >= 3 
+	if (str.length() >= 3
 		&& (unsigned char)str[0] == 0xef
 		&& (unsigned char)str[1] == 0xbb
 		&& (unsigned char)str[2] == 0xbf)
@@ -536,7 +542,7 @@ static void trimLogConfig(std::string &str, std::string extIgnore)
 		posBegin = 3;
 	}
 
-	//trim character 
+	//trim character
 	for (int i = posBegin; i<length; i++)
 	{
 		bool bCheck = false;
@@ -1040,7 +1046,7 @@ bool SemHelper::wait(int timeout)
 		struct timeval tm;
 		gettimeofday(&tm, NULL);
 		long long endtime = tm.tv_sec *1000 + tm.tv_usec/1000 + timeout;
-		do 
+		do
 		{
 			sleepMillisecond(50);
 			int ret = sem_trywait(&_semid);
@@ -1136,7 +1142,7 @@ LogerManager::LogerManager()
 	_ullStatusTotalPopLog = 0;
 	_ullStatusTotalWriteFileCount = 0;
 	_ullStatusTotalWriteFileBytes = 0;
-	
+
 	_pid = getProcessID();
 	_proName = getProcessName();
 	_loggers[LOG4Z_MAIN_LOGGER_ID]._enable = true;
@@ -1172,7 +1178,7 @@ void LogerManager::showColorText(const char *text, int level)
 	{
 		return;
 	}
-	else 
+	else
 	{
 		SetConsoleTextAttribute(hStd, LOG_COLOR[level]);
 		printf("%s", text);
@@ -1261,7 +1267,7 @@ LoggerId LogerManager::createLogger(const char* key)
 	{
 		return LOG4Z_INVALID_LOGGER_ID;
 	}
-	
+
 	std::string copyKey = key;
 	trimLogConfig(copyKey);
 
@@ -1323,6 +1329,81 @@ bool LogerManager::prePushLog(LoggerId id, int level)
 	}
 	return true;
 }
+
+int LogerManager::print_str(char* &buffer, size_t &buffer_size, const char* format, ... )
+{
+    if ( buffer_size == 0 ) return 0;
+
+    va_list args;
+    va_start (args, format);
+#ifdef WIN32
+    int ret = vsnprintf_s(buffer, buffer_size, _TRUNCATE, format, args);
+#else
+    int ret = vsnprintf (buffer, buffer_size, format, args);
+#endif
+    va_end (args);
+
+    if ( ret < 0 )
+    {
+        print_str(buffer, buffer_size, "ERROR FORMATTING LOG\r\n");
+        return -1;
+    }
+    else if ( (size_t)ret >= buffer_size )
+    {
+        buffer_size = 0;
+        ret = LOG4Z_LOG_BUF_SIZE-1;
+        return ret;
+    }
+
+    buffer += ret;
+    buffer_size -= ret;
+
+    return ret;
+}
+
+void LogerManager::formatLog(LogData * pLog, const char * log, const char * file, int line)
+{
+    const auto &the_logger = _loggers[pLog->_id];
+    char *buffer = pLog->_content;
+    pLog->_contentLen = 0;
+    size_t remain_buffer = LOG4Z_LOG_BUF_SIZE;
+
+    if ( the_logger._show_prefix )
+    {
+        tm tt = timeToTm(pLog->_time);
+        int ret = print_str(buffer, remain_buffer, "%d-%02d-%02d %02d:%02d:%02d.%03d %s ",
+            tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
+            LOG_STRING[pLog->_level]);
+
+        pLog->_contentLen += ret;
+    }
+
+    // Write log
+    int ret = print_str(buffer, remain_buffer, "%s", log);
+    pLog->_contentLen += ret;
+
+    // Write Suffix
+    if ( file != NULL && _loggers[pLog->_id]._fileLine)
+    {
+        const char * pNameBegin = file+strlen(file);
+        do
+        {
+            if (*pNameBegin == '\\' || *pNameBegin == '/'){ pNameBegin++; break;}
+            if (pNameBegin == file){break;}
+            pNameBegin--;
+        } while (true);
+
+        int ret = print_str(buffer, remain_buffer, " %s:%d", file, line);
+        pLog->_contentLen += ret;
+    }
+
+    if (pLog->_contentLen >= 2)
+    {
+        pLog->_content[pLog->_contentLen - 2] = '\r';
+        pLog->_content[pLog->_contentLen - 1] = '\n';
+    }
+}
+
 bool LogerManager::pushLog(LoggerId id, int level, const char * log, const char * file, int line)
 {
 	// discard log
@@ -1341,7 +1422,7 @@ bool LogerManager::pushLog(LoggerId id, int level, const char * log, const char 
 	LogData * pLog = new LogData;
 	pLog->_id =id;
 	pLog->_level = level;
-	
+
 	//append precise time to log
 	{
 #ifdef WIN32
@@ -1363,80 +1444,7 @@ bool LogerManager::pushLog(LoggerId id, int level, const char * log, const char 
 #endif
 	}
 
-	//format log
-	{
-		tm tt = timeToTm(pLog->_time);
-		if (file == NULL || !_loggers[pLog->_id]._fileLine)
-		{
-#ifdef WIN32
-			int ret = _snprintf_s(pLog->_content, LOG4Z_LOG_BUF_SIZE, _TRUNCATE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s \r\n",
-				tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-				LOG_STRING[pLog->_level], log);
-			if (ret == -1)
-			{
-				ret = LOG4Z_LOG_BUF_SIZE - 1;
-			}
-			pLog->_contentLen = ret;
-#else
-			int ret = snprintf(pLog->_content, LOG4Z_LOG_BUF_SIZE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s \r\n",
-				tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-				LOG_STRING[pLog->_level], log);
-			if (ret == -1)
-			{
-				ret = 0;
-			}
-			if (ret >= LOG4Z_LOG_BUF_SIZE)
-			{
-				ret = LOG4Z_LOG_BUF_SIZE-1;
-			}
-
-			pLog->_contentLen = ret;
-#endif
-		}
-		else
-		{
-			const char * pNameBegin = file+strlen(file);
-			do 
-			{
-				if (*pNameBegin == '\\' || *pNameBegin == '/'){ pNameBegin++; break;}
-				if (pNameBegin == file){break;}
-				pNameBegin--;
-			} while (true);
-			
-			
-#ifdef WIN32
-			int ret = _snprintf_s(pLog->_content, LOG4Z_LOG_BUF_SIZE, _TRUNCATE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s (%s):%d \r\n",
-				tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-				LOG_STRING[pLog->_level], log, pNameBegin, line);
-			if (ret == -1)
-			{
-				ret = LOG4Z_LOG_BUF_SIZE - 1;
-			}
-			pLog->_contentLen = ret;
-#else
-			int ret = snprintf(pLog->_content, LOG4Z_LOG_BUF_SIZE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s (%s):%d \r\n",
-				tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-				LOG_STRING[pLog->_level], log, pNameBegin, line);
-			if (ret == -1)
-			{
-				ret = 0;
-			}
-			if (ret >= LOG4Z_LOG_BUF_SIZE)
-			{
-				ret = LOG4Z_LOG_BUF_SIZE-1;
-			}
-
-			pLog->_contentLen = ret;
-#endif
-		}
-	
-		if (pLog->_contentLen >= 2)
-		{
-			pLog->_content[pLog->_contentLen - 2] = '\r';
-			pLog->_content[pLog->_contentLen - 1] = '\n';
-		}
-	
-	}
+	formatLog(pLog, log, file, line);
 
 	if (_loggers[pLog->_id]._display && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
 	{
@@ -1467,7 +1475,7 @@ bool LogerManager::pushLog(LoggerId id, int level, const char * log, const char 
 		delete pLog;
 		return true;
 	}
-	
+
 	AutoLock l(_logLock);
 	_logs.push_back(pLog);
 	_ullStatusTotalPushLog ++;
@@ -1536,10 +1544,10 @@ bool LogerManager::setLoggerFileLine(LoggerId id, bool enable)
 bool LogerManager::setLoggerName(LoggerId id, const char * name)
 {
 	if (id <0 || id > _lastId) return false;
-	//the name by main logger is the process name and it's can't change. 
-	if (id == LOG4Z_MAIN_LOGGER_ID) return false; 
-	
-	if (name == NULL || strlen(name) == 0) 
+	//the name by main logger is the process name and it's can't change.
+	if (id == LOG4Z_MAIN_LOGGER_ID) return false;
+
+	if (name == NULL || strlen(name) == 0)
 	{
 		return false;
 	}
@@ -1556,7 +1564,7 @@ bool LogerManager::setLoggerPath(LoggerId id, const char * path)
 {
 	if (id <0 || id > _lastId) return false;
 	std::string copyPath;
-	if (path == NULL || strlen(path) == 0) 
+	if (path == NULL || strlen(path) == 0)
 	{
 		copyPath = LOG4Z_DEFAULT_PATH;
 	}
@@ -1564,7 +1572,7 @@ bool LogerManager::setLoggerPath(LoggerId id, const char * path)
 	{
 		 copyPath = path;
 	}
-	
+
 	{
 		char ch = copyPath.at(copyPath.length() - 1);
 		if (ch != '\\' && ch != '/')
@@ -1670,7 +1678,7 @@ bool LogerManager::openLogger(LogData * pLog)
 		path = pLogger->_path;
 		pLogger->_hotChange = false;
 		_hotLock.unLock();
-		
+
 		char buf[100] = { 0 };
 		if (pLogger->_monthdir)
 		{
@@ -1733,7 +1741,7 @@ void LogerManager::run()
 		if (_loggers[i]._enable)
 		{
 			std::stringstream ss;
-			ss <<"logger id=" <<i 
+			ss <<"logger id=" <<i
 				<<" key=" <<_loggers[i]._key
 				<<" name=" <<_loggers[i]._name
 				<<" path=" <<_loggers[i]._path
@@ -1815,7 +1823,7 @@ void LogerManager::run()
 			}
 		}
 
-		//! delay. 
+		//! delay.
 		sleepMillisecond(100);
 
 		//! quit
@@ -1823,13 +1831,13 @@ void LogerManager::run()
 		{
 			break;
 		}
-		
+
 		if (_hotUpdateInterval != 0 && time(NULL) - lastCheckUpdate > _hotUpdateInterval)
 		{
 			updateConfig();
 			lastCheckUpdate = time(NULL);
 		}
-		
+
 
 
 	}
