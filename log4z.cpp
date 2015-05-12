@@ -736,6 +736,17 @@ static bool parseConfigLine(const std::string& line, int curLineNum, std::string
 			iter->second._fileLine = true;
 		}
 	}
+	else if (kv.first == "show_prefix")
+	{
+		if (kv.second == "false" || kv.second == "0")
+		{
+			iter->second._show_prefix = false;
+		}
+		else
+		{
+			iter->second._show_prefix = true;
+		}
+	}
 	//! enable/disable one logger
 	else if (kv.first == "enable")
 	{
@@ -1372,7 +1383,7 @@ void LogerManager::formatLog(LogData * pLog, const char * log, const char * file
     if ( _loggers[pLog->_id]._show_prefix )
     {
         tm tt = timeToTm(pLog->_time);
-        int ret = print_str(buffer, remain_buffer, "%d/%02d/%02d %02d:%02d:%02d.%03d %s ",
+        int ret = print_str(buffer, remain_buffer, "%d-%02d-%02d %02d:%02d:%02d.%03d %s ",
             tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
             LOG_STRING[pLog->_level]);
 
