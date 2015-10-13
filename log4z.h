@@ -356,7 +356,7 @@ _ZSUMMER_END
 #define LOG_ERROR(id, log) LOG_STREAM(id, LOG_LEVEL_ERROR, log)
 #define LOG_ALARM(id, log) LOG_STREAM(id, LOG_LEVEL_ALARM, log)
 #define LOG_FATAL(id, log) LOG_STREAM(id, LOG_LEVEL_FATAL, log)
-#define LOG_TICK(id, log, count) { static unsigned tick = 0; if ( tick % count ) { LOG_TRACE(id,log) } else { LOG_DEBUG(id,log) } }
+#define LOG_TICK(id, log, count) { static unsigned tick = 0; if ( tick % count ) { LOG_TRACE(id,log) } else { LOG_DEBUG(id,log) } ++tick; }
 
 //! super micro.
 #define LOGT( log ) LOG_TRACE(LOG4Z_MAIN_LOGGER_ID, log )
@@ -366,7 +366,7 @@ _ZSUMMER_END
 #define LOGE( log ) LOG_ERROR(LOG4Z_MAIN_LOGGER_ID, log )
 #define LOGA( log ) LOG_ALARM(LOG4Z_MAIN_LOGGER_ID, log )
 #define LOGF( log ) LOG_FATAL(LOG4Z_MAIN_LOGGER_ID, log )
-#define LOGCK(log, count) { static unsigned tick = 0; if ( tick % count ) { LOG_TRACE(LOG4Z_MAIN_LOGGER_ID,log) } else { LOG_DEBUG(LOG4Z_MAIN_LOGGER_ID,log) } }
+#define LOGCK(log, count) { static unsigned tick = 0; if ( tick % count ) { LOG_TRACE(LOG4Z_MAIN_LOGGER_ID,log) } else { LOG_DEBUG(LOG4Z_MAIN_LOGGER_ID,log) } ++tick; }
 
 //! format input log.
 #ifdef LOG4Z_FORMAT_INPUT_ENABLE
